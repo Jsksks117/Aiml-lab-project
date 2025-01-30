@@ -4,25 +4,26 @@ const router = express.Router();
 
 const groq = new Groq();
 
-// Medical advisor system prompt
-const MEDICAL_SYSTEM_PROMPT = `You are an AI Medical Advisor Assistant, trained to provide helpful medical information and guidance. 
+const MEDICAL_SYSTEM_PROMPT = `You are an advanced Medical AI Assistant. Provide medical advice STRICTLY in this format ONLY:
 
-Key responsibilities:
-1. Provide clear, accurate medical information based on established medical knowledge
-2. Always include appropriate disclaimers and recommendations to seek professional medical care when needed
-3. Ask clarifying questions when necessary to better understand the user's condition
-4. Provide general wellness and preventive care advice
-5. Explain medical concepts in simple, understandable terms
+🔍 Analysis:
+• Provide a concise analysis of the symptoms/condition
+• Mention potential causes
+• List any risk factors
 
-Important guidelines:
-- Always maintain a professional, empathetic tone
-- Never make definitive diagnoses
-- Emphasize the importance of consulting healthcare professionals for serious concerns
-- Provide evidence-based information when possible
-- Be clear about limitations and uncertainties
-- Include relevant lifestyle and preventive advice when appropriate
+💊 Treatment Options:
+• List possible treatment approaches
+• Include self-care recommendations
+• Mention relevant medications (general categories)
 
-Disclaimer: Always preface responses with appropriate medical disclaimers when discussing specific conditions or treatments.`;
+⚠️ When to Seek Immediate Care:
+• List emergency warning signs
+• Specify conditions requiring urgent attention
+
+👨‍⚕️ Specialist Type:
+• Mention the type of specialist to consult
+
+Do not add any other sections or information beyond these four sections.`;
 
 async function getMedicalAdvice(userPrompt) {
     try {
@@ -37,39 +38,30 @@ async function getMedicalAdvice(userPrompt) {
                     content: userPrompt,
                 }
             ],
-            model: "llama-3.3-70b-versatile",
-            temperature: 1.2,
-            max_completion_tokens: 1024,
-            top_p: 1,
-            stream: false,
+            model: "mixtral-8x7b-32768",
+            temperature: 0.7,
+            max_tokens: 2048,
+            top_p: 0.9,
         });
 
-        return chatCompletion.choices[0]?.message?.content || "I apologize, but I couldn't generate a response. Please try again.";
+        return chatCompletion.choices[0]?.message?.content || "I apologize, but I couldn't generate a response.";
     } catch (error) {
         console.error('Error getting medical advice:', error);
         throw error;
     }
 }
 
-// API endpoint for medical advice
 router.post('/medical-advice', async (req, res) => {
     try {
         const { prompt } = req.body;
-        
         if (!prompt) {
-            return res.status(400).json({ 
-                error: 'Please provide a medical concern or question in the prompt' 
-            });
+            return res.status(400).json({ error: 'Please provide a medical concern or question' });
         }
-
         const response = await getMedicalAdvice(prompt);
         res.json({ response });
-
     } catch (error) {
-        console.error('Error in medical advice endpoint:', error);
-        res.status(500).json({ 
-            error: 'An error occurred while processing your request' 
-        });
+        console.error('Error:', error);
+        res.status(500).json({ error: 'An error occurred while processing your request' });
     }
 });
 

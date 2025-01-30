@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MediChat - Your AI Medical Advisor</title>
+    <title>Advanced Medical AI Advisor</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
@@ -11,24 +11,38 @@
     <div class="container">
         <aside class="sidebar">
             <div class="sidebar-header">
-                <h1>MediChat</h1>
-                <button class="new-chat">
-                    <i class="fas fa-plus"></i> New Chat
+                <h1>MediAI Advisor</h1>
+                <button class="new-chat" onclick="location.reload()">
+                    <i class="fas fa-plus"></i> New Consultation
                 </button>
             </div>
-            <div class="chat-history">
-                <!-- Chat history will be populated here -->
+            <div class="fixed-disclaimer">
+                <i class="fas fa-exclamation-triangle"></i>
+                <p>This AI provides general medical information only. Always consult healthcare professionals for medical decisions.</p>
             </div>
         </aside>
         
         <main class="main-content">
             <div class="chat-container">
                 <div class="welcome-message" id="welcome-message">
-                    <h2>Welcome to MediChat</h2>
-                    <p>Your AI Medical Advisor Assistant</p>
-                    <div class="disclaimer">
-                        <i class="fas fa-exclamation-triangle"></i>
-                        <p>Disclaimer: This AI assistant provides general medical information and should not replace professional medical advice. Always consult with a healthcare provider for medical decisions.</p>
+                    <h2>Welcome to Advanced Medical AI Advisor</h2>
+                    <p>Your AI-powered medical information assistant</p>
+                    <div class="features">
+                        <div class="feature">
+                            <i class="fas fa-brain"></i>
+                            <h3>Comprehensive Analysis</h3>
+                            <p>Detailed medical information and analysis</p>
+                        </div>
+                        <div class="feature">
+                            <i class="fas fa-clipboard-list"></i>
+                            <h3>Structured Responses</h3>
+                            <p>Clear, organized medical insights</p>
+                        </div>
+                        <div class="feature">
+                            <i class="fas fa-shield-alt"></i>
+                            <h3>Safety First</h3>
+                            <p>Emergency recognition and safety guidance</p>
+                        </div>
                     </div>
                 </div>
                 <div class="chat-messages" id="chat-messages">
@@ -36,13 +50,15 @@
                 </div>
             </div>
             <div class="input-container">
-                <textarea id="user-input" placeholder="Describe your medical concern or ask a health-related question..."></textarea>
+                <textarea id="user-input" placeholder="Describe your medical concern or ask a health-related question in detail..."></textarea>
                 <button id="send-button">
                     <i class="fas fa-paper-plane"></i>
                 </button>
             </div>
         </main>
     </div>
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
     <script src="script.js"></script>
 </body>
 </html> 

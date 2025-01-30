@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MediChat - Your AI Medical Advisor</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h1>MediChat</h1>
+                <button class="new-chat">
+                    <i class="fas fa-plus"></i> New Chat
+                </button>
+            </div>
+            <div class="chat-history">
+                <!-- Chat history will be populated here -->
+            </div>
+        </aside>
+        
+        <main class="main-content">
+            <div class="chat-container">
+                <div class="welcome-message" id="welcome-message">
+                    <h2>Welcome to MediChat</h2>
+                    <p>Your AI Medical Advisor Assistant</p>
+                    <div class="disclaimer">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <p>Disclaimer: This AI assistant provides general medical information and should not replace professional medical advice. Always consult with a healthcare provider for medical decisions.</p>
+                    </div>
+                </div>
+                <div class="chat-messages" id="chat-messages">
+                    <!-- Chat messages will appear here -->
+                </div>
+            </div>
+            <div class="input-container">
+                <textarea id="user-input" placeholder="Describe your medical concern or ask a health-related question..."></textarea>
+                <button id="send-button">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        </main>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html> 

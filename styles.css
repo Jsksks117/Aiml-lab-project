@@ -212,6 +212,30 @@ textarea:focus {
     white-space: pre-wrap;
 }
 
+.ai-message strong {
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+.ai-message a {
+    color: #2c7a7b;
+    text-decoration: none;
+    border-bottom: 1px solid #2c7a7b;
+    padding-bottom: 1px;
+    margin-left: 4px;
+}
+
+.ai-message a:hover {
+    color: #319795;
+    border-bottom-color: #319795;
+}
+
+/* Add spacing for facility and doctor listings */
+.ai-message strong:first-child {
+    display: block;
+    margin-bottom: 12px;
+}
+
 /* Loading Animation */
 .loading {
     display: flex;
@@ -264,4 +288,57 @@ textarea:focus {
 /* Healthcare Provider Recommendations */
 .ai-message strong {
     color: var(--primary-color);
+}
+
+/* Add these styles to your existing CSS */
+.ai-message a {
+    color: #2c7a7b;
+    text-decoration: none;
+    border-bottom: 1px solid #2c7a7b;
+}
+
+.ai-message a:hover {
+    color: #319795;
+    border-bottom-color: #319795;
+}
+
+/* Add new styles for facility and doctor info */
+.facility-info, .doctor-info {
+    background-color: #f7fafc;
+    border-radius: 8px;
+    padding: 12px;
+    margin: 8px 0;
+}
+
+.facility-name, .doctor-name {
+    font-size: 1.1em;
+    margin-bottom: 8px;
+}
+
+.facility-info div, .doctor-info div {
+    margin-bottom: 4px;
+}
+
+.maps-link {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid #e2e8f0;
+}
+
+.maps-link a {
+    display: inline-block;
+    color: #2c7a7b;
+    text-decoration: none;
+    padding: 4px 0;
+}
+
+.maps-link a:hover {
+    color: #319795;
+}
+
+/* Remove the existing link styles that might conflict */
+.ai-message a {
+    border-bottom: none;
+    margin-left: 0;
+    padding-bottom: 0;
 } 

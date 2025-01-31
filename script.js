@@ -81,11 +81,58 @@ document.addEventListener('DOMContentLoaded', function() {
                 place.tags['addr:city']
             ].filter(Boolean).join(', ');
 
-            return `🏥 ${name}
-    📍 ${address || 'Address unavailable'}${place.tags.phone ? `\n   📞 ${place.tags.phone}` : ''}${place.tags.opening_hours ? `\n   🕒 ${place.tags.opening_hours}` : ''}`;
+            const mapsLink = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(name + ' ' + address)}`;
+
+            let facilityInfo = [
+                `<div class="facility-info">`,
+                `<div class="facility-name">🏥 <strong>${name}</strong></div>`,
+                place.tags.phone ? `<div>📞 ${place.tags.phone}</div>` : '',
+                place.tags.opening_hours ? `<div>🕒 ${place.tags.opening_hours}</div>` : '',
+                `<div class="maps-link"><a href="${mapsLink}" target="_blank">📍 View on Google Maps</a></div>`,
+                `</div>`
+            ].filter(Boolean);
+
+            return facilityInfo.join('\n');
         }).join('\n\n');
 
-        return `\n\nNEARBY HEALTHCARE FACILITIES:\n${recommendations}`;
+        return `\n\n<strong>NEARBY HEALTHCARE FACILITIES:</strong>\n${recommendations}`;
+    }
+
+    async function scrapeDoctors(specialty, location) {
+        try {
+            // Try scraping from Practo (or similar healthcare directory)
+            const searchUrl = `https://www.practo.com/${location}/doctor/${specialty}`;
+            const response = await axios.get(searchUrl);
+            const $ = cheerio.load(response.data);
+            
+            const doctors = [];
+            
+            // Adjust selectors based on the website structure
+            $('.doctor-listing').each((i, element) => {
+                if (i >= 5) return; // Limit to 5 doctors
+                
+                const name = $(element).find('.doctor-name').text().trim();
+                const qualification = $(element).find('.doctor-qualification').text().trim();
+                const experience = $(element).find('.doctor-experience').text().trim();
+                const location = $(element).find('.doctor-location').text().trim();
+                
+                // Create Google Maps link for doctor
+                const mapsLink = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`Dr. ${name} ${location}`)}`;
+                
+                doctors.push({
+                    name,
+                    qualification,
+                    experience,
+                    location,
+                    mapsLink
+                });
+            });
+            
+            return doctors;
+        } catch (error) {
+            console.error('Error scraping doctors:', error);
+            return [];
+        }
     }
 
     async function getMedicalResponse(userMessage) {
@@ -105,10 +152,32 @@ document.addEventListener('DOMContentLoaded', function() {
             const data = await response.json();
             let fullResponse = data.response;
 
-            // Add recommendations if location is available
+            // Extract specialty and location
+            const specialty = extractHealthcareKeywords(data.response);
+            const userCity = await getUserCity(userLocation);
+            
+            // Get doctors through web scraping
+            const doctors = await scrapeDoctors(specialty, userCity);
+            
+            // Format doctor recommendations with maps links
+            if (doctors.length > 0) {
+                fullResponse += '\n\n<strong>👨‍⚕️ RECOMMENDED DOCTORS IN YOUR AREA:</strong>';
+                doctors.forEach(doctor => {
+                    const doctorInfo = [
+                        `<div class="doctor-info">`,
+                        `<div class="doctor-name">🔸 <strong>Dr. ${doctor.name}</strong></div>`,
+                        `<div>📚 ${doctor.qualification}</div>`,
+                        `<div>⏳ ${doctor.experience}</div>`,
+                        `<div class="maps-link"><a href="${doctor.mapsLink}" target="_blank">📍 View on Google Maps</a></div>`,
+                        `</div>`
+                    ];
+                    fullResponse += doctorInfo.join('\n');
+                });
+            }
+
+            // Add existing nearby facility recommendations
             if (userLocation) {
-                const keywords = extractHealthcareKeywords(data.response);
-                const facilities = await searchNearbyHealthcare(userLocation, keywords);
+                const facilities = await searchNearbyHealthcare(userLocation, specialty);
                 const recommendations = formatRecommendations(facilities);
                 fullResponse += recommendations;
             }
@@ -122,20 +191,26 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function extractHealthcareKeywords(response) {
         const specialties = {
-            'Cardiology': ['heart', 'chest pain', 'cardiac', 'blood pressure', 'palpitations'],
-            'Dermatology': ['skin', 'rash', 'acne', 'eczema', 'dermatitis'],
-            'Orthopedics': ['bone', 'joint', 'fracture', 'sprain', 'arthritis'],
-            'Pediatrics': ['child', 'infant', 'pediatric', 'vaccination'],
-            'Neurology': ['headache', 'migraine', 'brain', 'seizure', 'dizziness'],
-            'Ophthalmology': ['eye', 'vision', 'optical', 'cataract'],
-            'Dental': ['tooth', 'teeth', 'dental', 'gum', 'cavity'],
-            'Psychiatry': ['mental', 'anxiety', 'depression', 'stress'],
-            'Gynecology': ['pregnancy', 'menstrual', 'reproductive', 'obstetrics'],
-            'ENT': ['ear', 'nose', 'throat', 'sinus', 'hearing'],
-            'Gastroenterology': ['stomach', 'digestive', 'liver', 'intestine'],
-            'Pulmonology': ['lung', 'breathing', 'respiratory', 'asthma'],
-            'Endocrinology': ['diabetes', 'thyroid', 'hormone'],
-            'Urology': ['kidney', 'bladder', 'urinary', 'prostate']
+            'Cardiology': ['heart', 'chest pain', 'chest ache', 'cardiac', 'blood pressure', 'palpitations', 'arrhythmia', 'cardiovascular', 'angina', 'cholesterol', 'stroke', 'circulation', 'heart attack', 'hypertension', 'heart racing', 'chest tightness', 'heart burning'],
+            'Dermatology': ['skin', 'rash', 'acne', 'eczema', 'dermatitis', 'psoriasis', 'mole', 'melanoma', 'itching', 'hives', 'skin cancer', 'wart', 'rosacea', 'skin infection'],
+            'Orthopedics': ['bone', 'joint', 'fracture', 'sprain', 'arthritis', 'tendon', 'ligament', 'muscle pain', 'back pain', 'spine', 'knee', 'shoulder', 'hip', 'osteoporosis', 'sports injury', 'aching joints', 'bone ache', 'muscle ache', 'joint stiffness', 'back ache', 'neck ache', 'leg ache', 'arm ache', 'knee pain', 'ankle pain', 'wrist pain', 'elbow pain'],
+            'Pediatrics': ['child', 'infant', 'pediatric', 'vaccination', 'growth', 'development', 'childhood', 'newborn', 'baby', 'toddler', 'immunization', 'pediatric fever'],
+            'Neurology': ['headache', 'migraine', 'brain', 'seizure', 'dizziness', 'numbness', 'tremor', 'memory loss', 'stroke', 'multiple sclerosis', 'epilepsy', 'vertigo', 'neuropathy', 'head pain', 'head ache', 'throbbing head', 'nerve pain', 'tingling sensation', 'pins and needles', 'head pressure', 'brain fog'],
+            'Ophthalmology': ['eye', 'vision', 'optical', 'cataract', 'glaucoma', 'retina', 'blindness', 'eye pain', 'blurred vision', 'double vision', 'eye infection', 'eye pressure'],
+            'Dental': ['tooth', 'teeth', 'dental', 'gum', 'cavity', 'toothache', 'wisdom tooth', 'dental pain', 'root canal', 'dental crown', 'dental bridge', 'gingivitis', 'oral health', 'tooth pain', 'teeth ache', 'tooth ache', 'jaw pain', 'jaw ache', 'gum pain', 'mouth pain', 'teeth sensitivity'],
+            'Psychiatry': ['mental', 'anxiety', 'depression', 'stress', 'panic attack', 'bipolar', 'schizophrenia', 'eating disorder', 'addiction', 'insomnia', 'trauma', 'PTSD', 'OCD'],
+            'Gynecology': ['pregnancy', 'menstrual', 'reproductive', 'obstetrics', 'fertility', 'menopause', 'pelvic pain', 'ovarian', 'uterus', 'cervical', 'breast', 'contraception', 'gynecological'],
+            'ENT': ['ear', 'nose', 'throat', 'sinus', 'hearing', 'tonsil', 'adenoid', 'ear infection', 'hearing loss', 'tinnitus', 'nasal congestion', 'sinusitis', 'throat infection', 'ear ache', 'ear pain', 'throat pain', 'sore throat', 'throat ache', 'sinus pain', 'sinus pressure', 'nose pain', 'nose ache', 'ear pressure', 'ringing ears'],
+            'Gastroenterology': ['stomach', 'digestive', 'liver', 'intestine', 'acid reflux', 'GERD', 'ulcer', 'gallbladder', 'constipation', 'diarrhea', 'IBS', 'Crohn', 'colitis', 'hepatitis', 'stomach ache', 'stomach pain', 'abdominal pain', 'belly ache', 'tummy ache', 'gut pain', 'indigestion', 'heartburn', 'bloating', 'nausea'],
+            'Pulmonology': ['lung', 'breathing', 'respiratory', 'asthma', 'COPD', 'pneumonia', 'bronchitis', 'shortness of breath', 'cough', 'sleep apnea', 'tuberculosis', 'lung cancer', 'chest tightness', 'chest congestion', 'wheezing', 'difficulty breathing', 'chest pressure', 'chest ache', 'lung pain', 'painful breathing'],
+            'Endocrinology': ['diabetes', 'thyroid', 'hormone', 'metabolism', 'insulin', 'pituitary', 'adrenal', 'growth hormone', 'testosterone', 'estrogen', 'metabolic', 'obesity'],
+            'Urology': ['kidney', 'bladder', 'urinary', 'prostate', 'UTI', 'kidney stone', 'incontinence', 'erectile dysfunction', 'prostate cancer', 'bladder infection'],
+            'Rheumatology': ['arthritis', 'lupus', 'fibromyalgia', 'gout', 'rheumatoid', 'autoimmune', 'joint pain', 'inflammation', 'connective tissue', 'vasculitis'],
+            'Allergy/Immunology': ['allergy', 'asthma', 'immune system', 'hay fever', 'food allergy', 'hives', 'immunodeficiency', 'sinus allergy', 'allergic reaction'],
+            'Infectious Disease': ['infection', 'virus', 'bacterial', 'fungal', 'HIV', 'AIDS', 'COVID', 'flu', 'pneumonia', 'meningitis', 'sepsis', 'tropical disease'],
+            'Oncology': ['cancer', 'tumor', 'chemotherapy', 'radiation', 'leukemia', 'lymphoma', 'melanoma', 'oncology', 'malignant', 'metastasis'],
+            'Vascular': ['vein', 'artery', 'blood clot', 'DVT', 'varicose veins', 'peripheral artery disease', 'circulation', 'aneurysm', 'vascular disease'],
+            'Pain Management': ['chronic pain', 'pain management', 'nerve pain', 'fibromyalgia', 'back pain', 'neck pain', 'arthritis pain', 'migraine', 'joint pain', 'persistent pain', 'severe pain', 'constant pain', 'recurring pain', 'shooting pain', 'burning pain', 'throbbing pain', 'sharp pain', 'dull ache', 'radiating pain', 'muscle soreness', 'body ache', 'widespread pain']
         };
 
         const lowerResponse = response.toLowerCase();
@@ -152,7 +227,14 @@ document.addEventListener('DOMContentLoaded', function() {
         
         const messageDiv = document.createElement('div');
         messageDiv.className = `message ${isUser ? 'user-message' : 'ai-message'}`;
-        messageDiv.textContent = message;
+        
+        if (isUser) {
+            messageDiv.textContent = message;
+        } else {
+            // Use innerHTML for AI messages to support links
+            messageDiv.innerHTML = message;
+        }
+        
         chatMessages.appendChild(messageDiv);
         chatMessages.scrollTop = chatMessages.scrollHeight;
     }
@@ -188,4 +270,18 @@ document.addEventListener('DOMContentLoaded', function() {
             handleUserInput();
         }
     });
+
+    // Add new helper function to get user's city
+    async function getUserCity(coords) {
+        try {
+            const response = await fetch(
+                `https://nominatim.openstreetmap.org/reverse?format=json&lat=${coords.lat}&lon=${coords.lng}`
+            );
+            const data = await response.json();
+            return data.address.city || data.address.town || 'unknown';
+        } catch (error) {
+            console.error('Error getting user city:', error);
+            return 'unknown';
+        }
+    }
 }); 
